@@ -10,19 +10,11 @@ The intent is to keep the core of SimpleFOC clean, and thus easy to maintain, un
 
 ## New Release
 
-v1.0.9 - Released July 2025, for Simple FOC 2.3.5 or later
+v1.1.0 - Released xxx 2025, for Simple FOC xxx or later
 
 
-What's changed since 1.0.8?
-- FluxObserverSensor for sensorless FOC thanks to [@Candas1](https://github.com/Candas1)
-- AS5600 fast mode support
-- Improvements to SmoothingSensor and LinearHall thanks to [@dekutree64](https://github.com/dekutree64)
-- Improvements to CalibratedSensor and HybridStepper thanks to [@askuric](https://github.com/askuric)
-- AS5600 driver bugfix thanks to [@zbas](https://github.com/zbas)
-- Calibrated sensor improvements thanks to [@Schnilz](https://github.com/Schnilz)
-- ESP32HWEncoder bugfix thanks to [@AndBindStyle](https://github.com/AndBondStyle)
-- STM32HWEncoder fix thanks to [@AntonEvmenenko](https://github.com/AntonEvmenenko)
-- Bugfixes [included](https://github.com/simplefoc/Arduino-FOC-drivers/issues?q=milestone%3A1.0.9)
+What's changed since 1.0.9?
+- Bugfixes [included](https://github.com/simplefoc/Arduino-FOC-drivers/issues?q=milestone%3A1.1.0)
 
 
 ## What is included
@@ -59,8 +51,14 @@ Drivers for various position sensor ICs. In many cases these hardware-specific d
  - [MT6701 SSI driver](src/encoders/mt6701/) - SSI driver for the MagnTek MT6701 absolute position magnetic rotary encoder IC.
  - [MT6835 SPI driver](src/encoders/mt6835/) - SPI driver for the MagnTek MT6835 21 bit magnetic rotary encoder IC.
  - [STM32 PWM sensor driver](src/encoders/stm32pwmsensor/) - STM32 native timer-based driver for PWM angle sensors.
+
+### Special Encoders
+
  - [CalibratedSensor](src/encoders/calibrated/) - A sensor which can calibrate for eccentricity on the magnet placement.
  - [SmoothingSensor](src/encoders/smoothing/) - A SimpleFOC Sensor wrapper implementation which adds angle extrapolation.
+ - [LinearHall](src/encoders/linearhall/) - A HallSensor with linear interpolation between ticks
+ - [FluxObserver](src/encoders/MXLEMMING_observer/) - A "sensorless sensor" implementing flux observer (requires current sensing)
+ - 
 
 ### Communications
 
@@ -85,7 +83,7 @@ Load and store SimpleFOC motor settings, based on register abstraction. Storing 
 
 Drive different kinds of motors, or use alternate algorithms to SimpleFOC's default BLDCMotor and StepperMotor classes.
 
- - [HybridStepperMotor](motors/HybridStepperMotor/) - Drive stepper motors with 3 phases.
+ - [HybridStepperMotor](https://github.com/simplefoc/Arduino-FOC/blob/master/src/HybridStepperMotor.h) - HybridStepper has moved to the main repostory.
 
 
 ### Utilities
