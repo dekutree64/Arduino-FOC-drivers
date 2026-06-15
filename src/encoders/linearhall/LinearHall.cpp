@@ -91,9 +91,9 @@ void LinearHall::init(FOCMotor *motor) {
   int32_t start = millis();
   while(minA == 0 || minB == 0) {
     if ((int32_t)(millis() - start) >= 100) {
-      if(minA) SIMPEFOC_DEBUG("LinearHall::init failed. Sensor B not responding.");
-      else if(minB) SIMPEFOC_DEBUG("LinearHall::init failed. Sensor A not responding.");
-      else SIMPEFOC_DEBUG("LinearHall::init failed. Sensors not responding.");
+      if(minA) SIMPLEFOC_DEBUG("LinearHall::init failed. Sensor B not responding.");
+      else if(minB) SIMPLEFOC_DEBUG("LinearHall::init failed. Sensor A not responding.");
+      else SIMPLEFOC_DEBUG("LinearHall::init failed. Sensors not responding.");
       return;
     }
 
