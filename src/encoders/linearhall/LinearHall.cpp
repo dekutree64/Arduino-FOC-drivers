@@ -7,7 +7,7 @@ __attribute__((weak)) void ReadLinearHalls(int hallA, int hallB, int *a, int *b)
   *b = analogRead(hallB);
 }
 
-LinearHall::LinearHall(int _hallA, int _hallB, int _pp, bool _sensor_spacing_120){
+LinearHall::LinearHall(int _hallA, int _hallB, int _pp, SensorSpacing _sensor_spacing){
   centerA = 512;
   centerB = 512;
   pinA = _hallA;
@@ -15,15 +15,15 @@ LinearHall::LinearHall(int _hallA, int _hallB, int _pp, bool _sensor_spacing_120
   pp = _pp;
   electrical_rev = 0;
   amplitude_ratio = 1.0f;
-  sensor_spacing_120 = _sensor_spacing_120;
+  sensor_spacing = _sensor_spacing;
   prev_reading = 0;
 }
 
 float LinearHall::readSensors() { 
   ReadLinearHalls(pinA, pinB, &lastA, &lastB);
   float a = lastA - centerA, b = (lastB - centerB) * amplitude_ratio;
-  if (sensor_spacing_120)
-    b = a * _1_SQRT3 + b * _2_SQRT3; // Clarke transform, as in CurrentSense::getABCurrents
+  if (sensor_spacing != SensorSpacing::_90)
+    b = (sensor_spacing==SensorSpacing::_60?-a:a) * _1_SQRT3 + b * _2_SQRT3; // Clarke transform, as in CurrentSense::getABCurrents
 
   return _atan2(a, b);
 }
@@ -60,8 +60,12 @@ float LinearHall::getSensorAngle() {
 }
 
 void LinearHall::init(int _centerA, int _centerB, float _amplitude_ratio) {
-  pinMode(pinA, INPUT);
-  pinMode(pinB, INPUT);
+  // Skip configuring the pins here because they normally default to input anyway, and
+  // this makes it possible to use ADC channel numbers instead of pin numbers when using
+  // custom implementation of ReadLinearHalls, to avoid having to remap them every update.
+  // If pins do need to be configured, it can be done by user code before calling init.
+  //pinMode(pinA, INPUT);
+  //pinMode(pinB, INPUT);
 
   centerA = _centerA;
   centerB = _centerB;
@@ -78,14 +82,25 @@ void LinearHall::init(FOCMotor *motor) {
     return;
   }
 
-  pinMode(pinA, INPUT);
-  pinMode(pinB, INPUT);
+  // See comment in other version of init for why these are commented out
+  //pinMode(pinA, INPUT);
+  //pinMode(pinB, INPUT);
 
-  int minA, maxA, minB, maxB;
+  // Get the initial reading, or time out if either of the sensors fails to give a nonzero value after 100ms
+  int minA = 0, maxA = 0, minB = 0, maxB = 0;
+  int32_t start = millis();
+  while(minA == 0 || minB == 0) {
+    if ((int32_t)(millis() - start) >= 100) {
+      if(minA) SIMPEFOC_DEBUG("LinearHall::init failed. Sensor B not responding.");
+      else if(minB) SIMPEFOC_DEBUG("LinearHall::init failed. Sensor A not responding.");
+      else SIMPEFOC_DEBUG("LinearHall::init failed. Sensors not responding.");
+      return;
+    }
 
-  ReadLinearHalls(pinA, pinB, &lastA, &lastB);
-  minA = maxA = centerA = lastA;
-  minB = maxB = centerB = lastB;
+    ReadLinearHalls(pinA, pinB, &lastA, &lastB);
+    minA = maxA = centerA = lastA;
+    minB = maxB = centerB = lastB;
+  }
 
   // move one mechanical revolution forward
   for (int i = 0; i <= 2000; i++)
@@ -109,15 +124,16 @@ void LinearHall::init(FOCMotor *motor) {
 
     _delay(2);
   }
+  motor->setPhaseVoltage(0, 0, angle);
 
   amplitude_ratio = (float)(maxA - minA) / (float)(maxB - minB);
 
-  motor->monitor_port->print("LinearHall centerA: ");
-  motor->monitor_port->print(centerA);
-  motor->monitor_port->print(", centerB: ");
-  motor->monitor_port->println(centerB);
-  motor->monitor_port->print(", amplitude_ratio: ");
-  motor->monitor_port->println(amplitude_ratio);
+  Serial.print("LinearHall centerA: ");
+  Serial.print(centerA);
+  Serial.print(", centerB: ");
+  Serial.print(centerB);
+  Serial.print(", amplitude_ratio: ");
+  Serial.println(amplitude_ratio);
 
   //establish initial reading for rollover handling
   electrical_rev = 0;

@@ -8,8 +8,13 @@ void ReadLinearHalls(int hallA, int hallB, int *a, int *b);
 
 class LinearHall: public Sensor{
   public:
-    // Note: With sensor_spacing_120 you may need to swap hallA and hallB (one way is effectively -240 degrees apart and won't work).
-    LinearHall(int hallA, int hallB, int pp, bool sensor_spacing_120 = false);
+    enum SensorSpacing {
+      _60 = -1, // 60 degree spacing, equivalent to 120 degrees with one sensor flipped to opposite polarity
+      _90 = 0, // When one sensor is centered on a magnet, the other is half way between magnets
+      _120 = 1, // Sensors spaced 120 electrical degrees, same as digital halls use
+    };
+
+    LinearHall(int hallA, int hallB, int pp, SensorSpacing sensor_spacing = SensorSpacing::_90);
 
     void init(int centerA, int centerB, float _amplitude_ratio = 1.0f); // Initialize without moving motor
     void init(class FOCMotor *motor); // Move motor to find center values
@@ -19,7 +24,7 @@ class LinearHall: public Sensor{
     int lastA, lastB;
     int electrical_rev;
     float amplitude_ratio; // Correction factor if one sensor is slightly farther from the magnets
-    bool sensor_spacing_120; // false = sensors spaced 90 electrical degrees, true = 120 degrees
+    SensorSpacing sensor_spacing;
 
   protected:
     float readSensors();
