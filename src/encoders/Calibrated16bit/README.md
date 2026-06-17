@@ -1,4 +1,4 @@
-This class is somewhat redundant to the existing CalibratedSensor in the Arduino-FOC-drivers repository, but is faster, and CalibratedSensor seems to have a small problem at the wraparound point that I couldn't solve (floating point wrapping is far more confusing than the power-of-two integers used here)
+This class is somewhat redundant to the existing CalibratedSensor in the Arduino-FOC-drivers repository, but is faster, and at the time I created it, CalibratedSensor had a small problem at the wraparound point that I couldn't solve (floating point wrapping is far more confusing than the power-of-two integers used here)
 
 
 Example usage, running a stepper motor with a 6PWM BLDC driver on STM32G431:
