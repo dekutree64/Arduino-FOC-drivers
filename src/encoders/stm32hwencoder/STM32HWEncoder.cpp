@@ -74,7 +74,7 @@ void STM32HWEncoder::init() {
 
     TIM_Encoder_InitTypeDef encoder_config;
 
-    encoder_config.EncoderMode = TIM_ENCODERMODE_TI12;
+    encoder_config.EncoderMode = encoder_mode;;
 
     encoder_config.IC1Polarity = TIM_ICPOLARITY_RISING;
     encoder_config.IC1Selection = TIM_ICSELECTION_DIRECTTI;
