@@ -114,8 +114,8 @@ bool Gooser5CurrentSense::setChannelEnabledRegular(Channel channel, bool enable,
   else {
     regular_flags |= flag;
     int ch = dChannel[channel][1];
-    if(ch <= 9) ADC->SMPR1 = (ADC1->SMPR1 & ~(7<<(ch*3))) | (sample_time<<(ch*3));
-    else ch-=9, ADC->SMPR2 = (ADC1->SMPR2 & ~(7<<(ch*3))) | (sample_time<<(ch*3));
+    if(ch <= 9) ADC->SMPR1 = (ADC->SMPR1 & ~(7<<(ch*3))) | (sample_time<<(ch*3));
+    else ch-=9, ADC->SMPR2 = (ADC->SMPR2 & ~(7<<(ch*3))) | (sample_time<<(ch*3));
   }
 
   // Rebuild sequence registers and other variables
@@ -163,8 +163,8 @@ bool Gooser5CurrentSense::setChannelEnabledInjected(Channel channel, bool enable
   else {
     injected_flags |= flag;
     int ch = dChannel[channel][1];
-    if(ch <= 9) ADC->SMPR1 = (ADC1->SMPR1 & ~(7<<(ch*3))) | (sample_time<<(ch*3));
-    else ch-=9, ADC->SMPR2 = (ADC1->SMPR2 & ~(7<<(ch*3))) | (sample_time<<(ch*3));
+    if(ch <= 9) ADC->SMPR1 = (ADC->SMPR1 & ~(7<<(ch*3))) | (sample_time<<(ch*3));
+    else ch-=9, ADC->SMPR2 = (ADC->SMPR2 & ~(7<<(ch*3))) | (sample_time<<(ch*3));
   }
 
   // Rebuild sequence register and other variables
