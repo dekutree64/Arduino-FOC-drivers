@@ -95,7 +95,8 @@ void Calibrated16bitSensor::init(FOCMotor *motor, int _lut_resolution, uint16_t 
 }
 
 void Calibrated16bitSensor::update() {
-  wrapped.update();
+  if(readSensor16bit == Calibrated16bitSensor_DefaultReadHelper)
+    wrapped.update(); // This reads the sensor angle, which is typically not necessary with a custom read helper
   Sensor::update();
 }
 

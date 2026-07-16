@@ -24,11 +24,12 @@ class Calibrated16bitSensor: public Sensor{
     // Print data to serial so it can be copy/pasted into the code to avoid re-calibrating every startup.
     void printCalibration() const;
 
+    uint16_t (*readSensor16bit)(Sensor*); // Helper function allows reading raw integer angle from most sensors
+
 protected:
     float getSensorAngle() override;
 
     Sensor &wrapped;
-    uint16_t (*readSensor16bit)(Sensor*); // Helper function allows reading raw integer angle from most sensors
     const uint16_t *lut=NULL; // Table has one extra entry on the end to simplify interpolation code
     int lut_resolution=0; // Number of entries in lookup table, excluding the extra for interpolation
     uint16_t lastRaw=0, beforeLastRaw=0, lastCal=0; // Last sensor reading
