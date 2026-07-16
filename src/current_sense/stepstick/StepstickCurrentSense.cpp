@@ -1,5 +1,4 @@
 #include <SimpleFOC.h>
-#include <SimpleDCMotor.h>
 #include <current_sense\hardware_specific\stm32\stm32_mcu.h>
 #include "StepstickCurrentSense.h"
 
