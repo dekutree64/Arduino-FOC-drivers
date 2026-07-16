@@ -5,6 +5,13 @@
 
 #define ADC_VOLTAGE 3.3f
 
+// Regular conversions are accumulated in a DMA buffer to give a running average over this time period.
+// At 42.5MHz ADC clock, 1700 cycles is 40µs (one PWM cycle at standard 25KHz). However, the motor update 
+// typically takes 50-60µs, and using a longer time window only gives a slight lowpass filtering effect, 
+// so the value chosen is ~47µs which allows 128x oversampling for best quality current sense if no 
+// other regular channels are used.
+#define MAX_TIME 2000 // ADC clock cycles
+
 
 // --- Gooser5CurrentSense static variables ---
 
@@ -24,10 +31,9 @@ static const uint8_t dChannel[Gooser5CurrentSense::Channel::num][2] = {
 /*vbus     */ {1, 5}
 };
 
-// This table is indexed by num_enabled-1. The more channels are enabled, the fewer samples each of them can take. For example
-// a value of 3 means 1<<3=8 entries will be stored in the DMA buffer for each item. Each of those is already 4 samples 
-// summed together by hardware oversampling, giving a total of 32 samples averaged together and scaled to 0-16383 range.
-static const uint8_t dOversamplesShift[] = {5, 4, 3, 3, 2, 2, 2, 2};
+// 12.5 cycle conversion time + sample time, multiplied by 4x hardware oversampling.
+// Sample times from RM0440: 0=2.5, 1=6.5, 2=12.5, 3=24.5, 4=47.5, 5=92.5, 6=247.5, 7=640.5
+static const uint16_t time_table[] = { 15*4, 19*4, 25*4, 37*4, 60*4, 105*4, 260*4, 653*4 };
 
 volatile uint32_t *JDR[2] = {&ADC1->JDR1,&ADC2->JDR1};
 
@@ -40,19 +46,6 @@ uint8_t Gooser5CurrentSense::injected_num[2] = {0};
 uint8_t Gooser5CurrentSense::regular_idx[Gooser5CurrentSense::Channel::num] = {0};
 uint8_t Gooser5CurrentSense::injected_idx[Gooser5CurrentSense::Channel::num] = {0};
 volatile uint16_t Gooser5CurrentSense::dma_buffer[2][32];
-
-
-// --- Override of LinearHall reading function ---
-
-void ReadLinearHalls(int hallA, int hallB, int *a, int *b) {
-  if(hallA == PA7 && hallB == PA2) {
-    *a = Gooser5CurrentSense::getResultRegular(Gooser5CurrentSense::Channel::encoder0B),
-    *b = Gooser5CurrentSense::getResultRegular(Gooser5CurrentSense::Channel::encoder0C);
-  } else if(hallA == PA1 && hallB == PA4) {
-    *a = Gooser5CurrentSense::getResultRegular(Gooser5CurrentSense::Channel::encoder1B),
-    *b = Gooser5CurrentSense::getResultRegular(Gooser5CurrentSense::Channel::encoder1C);
-  } else *a = *b = 0;
-}
 
 
 // --- Gooser5CurrentSense static functions ---
@@ -119,20 +112,24 @@ bool Gooser5CurrentSense::setChannelEnabledRegular(Channel channel, bool enable,
   }
 
   // Rebuild sequence registers and other variables
-  uint32_t SQR1 = 0, SQR2 = 0, num = 0;
+  uint32_t SQR1 = 0, SQR2 = 0, total_time = 0, num = 0;
   for (int i = 0; (1<<i) <= regular_flags; i++) {
     if (regular_flags & (1<<i)) {
-      regular_idx[i] = num;
-      if(num<4) SQR1 |= dChannel[i][1]<<(num+1)*6;
-      else      SQR2 |= dChannel[i][1]<<(num-4)*6;
-      num++;
+      int ch = dChannel[i][1];
+      if(ch<=9) total_time += time_table[(ADC->SMPR1 >> (ch*3)) & 7];
+      else      total_time += time_table[(ADC->SMPR2 >> ((ch-9)*3)) & 7];
+      if(num<4) SQR1 |= ch<<(num+1)*6;
+      else      SQR2 |= ch<<(num-4)*6;
+      regular_idx[i] = num++;
     }
   }
 
   // Reconfigure ADC
   if (num != 0) {
     regular_num[adc] = num;
-    oversamples_shift[adc] = dOversamplesShift[num-1];
+    oversamples_shift[adc] = 0;
+    while(oversamples_shift[adc] < 5 && (total_time<<1) <= MAX_TIME)
+      oversamples_shift[adc]++, total_time <<= 1;
     DMA->CNDTR = num << oversamples_shift[adc];
     DMA->CCR |= DMA_CCR_EN;
     ADC->SQR1 = SQR1|(num-1), ADC->SQR2 = SQR2;
