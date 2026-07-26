@@ -34,9 +34,9 @@
 #define SPI1_SCK E1A_PIN
 #define SPI1_MISO E0A_PIN
 #define SPI1_MOSI E0B_PIN
-#define SPI3_SCK UART2_RX
-#define SPI3_MISO UART2_TX
-#define SPI3_MOSI PB5
+#define SPI3_SCK PB_3_ALT1
+#define SPI3_MISO PB_4_ALT1
+#define SPI3_MOSI PB_5_ALT1
 #define SWDIO_PIN PA13
 #define SWCLK_PIN PA14
 #define VBUS_PIN PC4
