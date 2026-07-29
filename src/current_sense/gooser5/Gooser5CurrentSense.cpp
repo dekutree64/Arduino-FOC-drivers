@@ -114,7 +114,7 @@ bool Gooser5CurrentSense::setChannelEnabledRegular(Channel channel, bool enable,
   // Rebuild sequence registers and other variables
   uint32_t SQR1 = 0, SQR2 = 0, total_time = 0, num = 0;
   for (int i = 0; (1<<i) <= regular_flags; i++) {
-    if (regular_flags & (1<<i)) {
+    if ((regular_flags & (1<<i)) && (dChannel[i][0] == adc)) {
       int ch = dChannel[i][1];
       if(ch<=9) total_time += time_table[(ADC->SMPR1 >> (ch*3)) & 7];
       else      total_time += time_table[(ADC->SMPR2 >> ((ch-9)*3)) & 7];
@@ -167,7 +167,7 @@ bool Gooser5CurrentSense::setChannelEnabledInjected(Channel channel, bool enable
   // Rebuild sequence register and other variables
   uint32_t JSQR = 0, num = 0;
   for (int i = 0; (1<<i) <= injected_flags; i++) {
-    if (injected_flags & (1<<i)) {
+    if ((injected_flags & (1<<i)) && (dChannel[i][0] == adc)) {
       injected_idx[i] = num;
       JSQR |= dChannel[i][1]<<(9 + num*6);
       num++;
@@ -187,10 +187,10 @@ bool Gooser5CurrentSense::setChannelEnabledInjected(Channel channel, bool enable
 int Gooser5CurrentSense::getResultRegular(Channel channel) {
   if (!(regular_flags & (1<<channel)) && !setChannelEnabledRegular(channel, true, true))
       return 0;
-  int sum = 0, adc = dChannel[channel][0], ovss = oversamples_shift[adc];
+  int sum = 0, adc = dChannel[channel][0], num = regular_num[adc], ovss = oversamples_shift[adc];
   volatile uint16_t *buffer = dma_buffer[adc] + regular_idx[channel];
-  for (int i = 0; i < (1<<ovss); i++)
-    sum += buffer[i];
+  for (int i = 0; i < (1<<ovss); i++, buffer += num)
+    sum += *buffer;
   return sum >> ovss;
 }
 
@@ -235,7 +235,6 @@ PhaseCurrent_s Gooser5CurrentSense::getPhaseCurrents() {
 
 void Gooser5CurrentSense::calibrateOffsets() {
   const int calibration_rounds = 1000;
-
   _delay(10);
   // find adc offset = zero current voltage
   offset_ia = offset_ib = 0;
